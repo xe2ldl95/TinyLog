@@ -1,7 +1,7 @@
 import { settings, loadSettings, applyTheme, toggleTheme, changeFontSize, saveSettings } from './settings.js';
 import { checkEmptyLogs, displayLogs, displayQSOsForEdit, displayAllQSOs, exportFilteredLogs, importADIF, openLog, downloadLog, deleteLog, openEditQsoById, saveCurrentQso, deleteCurrentQso, deleteQsoById } from './qsoView.js';
 import { showStats } from './stats.js';
-import { showNotification, toggleSatelliteAndPropagationOptions, toggleOtherSatellite, toggleEditSatelliteAndPropagationOptions, toggleEditOtherSatellite, toggleLlotaReference, togglePropagationVisibility } from './ui.js';
+import { showNotification, toggleSatelliteAndPropagationOptions, toggleOtherSatellite, toggleEditSatelliteAndPropagationOptions, toggleEditOtherSatellite, toggleLlotaReference, togglePropagationVisibility, populateSubmodes } from './ui.js';
 import { loadInitDefaults, loadDefaultsForQSO, setCurrentUTC } from './logForms.js';
 import { openQsoMapForLog, openGlobalMap, closeMapModal, applyMapFilters } from './map.js';
 import { getLogs, getCurrentLog } from './storage.js';
@@ -50,6 +50,7 @@ window.openQsoMapForLog = openQsoMapForLog;
 window.openGlobalMap = openGlobalMap;
 window.closeMapModal = closeMapModal;
 window.applyMapFilters = applyMapFilters;
+window.populateSubmodes = populateSubmodes;
 
 window.openLicensesModal = function openLicensesModal() {
     document.getElementById('licenses-modal').classList.remove('hidden');
@@ -57,6 +58,15 @@ window.openLicensesModal = function openLicensesModal() {
 
 window.closeLicensesModal = function closeLicensesModal() {
     document.getElementById('licenses-modal').classList.add('hidden');
+};
+
+window.toggleNavDrawer = function toggleNavDrawer() {
+    const drawer = document.getElementById('nav-drawer');
+    drawer.classList.toggle('show');
+};
+
+window.closeNavDrawer = function closeNavDrawer() {
+    document.getElementById('nav-drawer').classList.remove('show');
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -110,8 +120,34 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         let datetime = document.getElementById('qso-datetime').value;
         if (!datetime) {
-            datetime = new Date().toISOString().slice(0, 16);
+            showDatetimeConfirm();
+            return;
         }
+        saveQso(datetime);
+    });
+
+    function showDatetimeConfirm() {
+        document.getElementById('time-confirm-modal').classList.add('show');
+        document.getElementById('time-confirm-yes').focus();
+    }
+
+    function hideDatetimeConfirm() {
+        document.getElementById('time-confirm-modal').classList.remove('show');
+    }
+
+    document.getElementById('time-confirm-yes').addEventListener('click', () => {
+        const datetime = new Date().toISOString().slice(0, 16);
+        document.getElementById('qso-datetime').value = datetime;
+        hideDatetimeConfirm();
+        saveQso(datetime);
+    });
+
+    document.getElementById('time-confirm-no').addEventListener('click', () => {
+        hideDatetimeConfirm();
+        document.getElementById('qso-datetime').focus();
+    });
+
+    function saveQso(datetime) {
         const dxCall = document.getElementById('dx-call').value.trim().toUpperCase();
         const rstSent = document.getElementById('rst-sent').value.trim();
         const rstRcvd = document.getElementById('rst-rcvd').value.trim();
@@ -121,19 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let satellite = '';
         let propagationMode = '';
-        let submode = '';
+        const subSelect = document.getElementById('submode-select');
+        const submode = subSelect && !subSelect.closest('.hidden') ? subSelect.value : '';
 
-        if (mode === 'SAT') {
-            const satSelect = document.getElementById('satellite').value;
-            satellite = satSelect === 'other' ? document.getElementById('satellite-other').value.trim().toUpperCase() : satSelect.toUpperCase();
+        const satSelect = document.getElementById('satellite');
+        const satContainer = document.getElementById('satellite-options');
+        if (satSelect && satContainer && !satContainer.classList.contains('hidden')) {
+            satellite = satSelect.value === 'other'
+                ? document.getElementById('satellite-other').value.trim().toUpperCase()
+                : satSelect.value.toUpperCase();
         }
 
-        if (mode === 'SSB') {
-            submode = document.getElementById('ssb-submode-select').value;
-        }
-
-        if (settings && settings.showPropagation) {
-            propagationMode = document.getElementById('propagation-mode').value.toUpperCase();
+        const propSel = document.getElementById('propagation-mode');
+        if (propSel) {
+            propagationMode = propSel.value.toUpperCase();
         }
 
         if (!dxCall || !frequency) {
@@ -172,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentLog.lastMode = mode;
             currentLog.lastSubmode = submode;
             currentLog.lastPropagationMode = propagationMode;
+            currentLog.lastSatellite = satellite;
             localStorage.setItem('currentLog', JSON.stringify(currentLog));
 
             const allLogs = getLogs();
@@ -187,6 +225,34 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Guardado correctamente', 'success');
         document.getElementById('qso-form').reset();
         loadDefaultsForQSO();
+    }
+
+    document.getElementById('nav-drawer').addEventListener('click', function(e) {
+        if (e.target === this) closeNavDrawer();
+    });
+
+    // Global keyboard handlers
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const drawer = document.getElementById('nav-drawer');
+            if (drawer.classList.contains('show')) {
+                closeNavDrawer();
+                return;
+            }
+            const confirmModal = document.getElementById('time-confirm-modal');
+            if (confirmModal && confirmModal.classList.contains('show')) {
+                document.getElementById('time-confirm-no').click();
+                return;
+            }
+            const backBtn = document.querySelector('.screen.active .back-btn');
+            if (backBtn) backBtn.click();
+        }
+        if (e.key === 'Enter') {
+            const confirmModal = document.getElementById('time-confirm-modal');
+            if (confirmModal && confirmModal.classList.contains('show') && e.target.tagName !== 'TEXTAREA') {
+                document.getElementById('time-confirm-yes').click();
+            }
+        }
     });
 
     if ('serviceWorker' in navigator) {

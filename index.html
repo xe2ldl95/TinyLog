@@ -23,7 +23,7 @@
     <div id="welcome" class="screen active">
         <div class="welcome">
             <div class="welcome-logo">
-                <i class="fas fa-radio"></i>
+                <img src="icon.svg" alt="TinyLog" class="logo-img">
             </div>
             <h2>TinyLog</h2>
             <p>Logbook sencillo y rápido para radioaficionados.<br>Los datos se guardan en tu dispositivo (localStorage).</p>
@@ -37,18 +37,23 @@
             </button>
         </div>
         <div class="footer">
-            <p>73 de XE2LDL • v0.1.6 PWA</p>
+            <p>73 de XE2LDL • v0.1.7 PWA</p>
         </div>
     </div>
 
     <!-- Menu Screen -->
     <div id="menu" class="screen">
         <header>
+            <div class="header-left">
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-home"></i> Menú Principal</h1>
         </header>
         <div class="card" style="text-align: center; margin-bottom: 24px;">
-            <div style="font-size: 3rem; color: var(--primary); margin-bottom: 16px;">
-                <i class="fas fa-satellite-dish"></i>
+            <div class="menu-logo">
+                <img src="icon.svg" alt="TinyLog" class="logo-img">
             </div>
             <h2 style="font-size: 1.4rem; margin-bottom: 8px;">TinyLog</h2>
             <p style="color: var(--text-muted); margin-bottom: 0;">Logbook para radioaficionados</p>
@@ -72,9 +77,14 @@
     <!-- Init Log Screen -->
     <div id="init-log" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('menu')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('menu')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-file-plus"></i> Nuevo Log</h1>
         </header>
         <form id="init-form" class="slide-up">
@@ -117,13 +127,31 @@
     <!-- Add QSO Screen -->
     <div id="add-qso" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('log-view'); displayQSOsForEdit();">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('log-view'); displayQSOsForEdit();">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-satellite"></i> Añadir QSO</h1>
         </header>
         <div id="notification" class="notification"></div>
-        <form id="qso-form" class="slide-up">
+
+    <!-- Modal para confirmar hora actual -->
+    <div id="time-confirm-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-title">Hora no especificada</div>
+            <div class="modal-message">¿Usar hora actual UTC?</div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn modal-btn-primary" id="time-confirm-yes">Sí</button>
+                <button type="button" class="modal-btn modal-btn-secondary" id="time-confirm-no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <form id="qso-form" class="slide-up">
             <div class="form-group">
                 <label for="qso-datetime"><i class="fas fa-clock"></i> Fecha y Hora UTC</label>
                 <input type="datetime-local" id="qso-datetime" required>
@@ -150,38 +178,54 @@
                 <label for="frequency"><i class="fas fa-wave-square"></i> Frecuencia (MHz)</label>
                 <input type="text" id="frequency" placeholder="ej. 14.250" required autocomplete="off">
             </div>
-             <div class="form-group">
-                 <label for="mode"><i class="fas fa-signal"></i> Modo</label>
-                 <select id="mode" required onchange="toggleSatelliteAndPropagationOptions()">
-                     <option value="CW">CW</option>
-                     <option value="SSB">SSB</option>
-                     <option value="AM">AM</option>
-                     <option value="FM">FM</option>
-                     <option value="SSTV">SSTV</option>
-                     <option value="SAT">SAT</option>
-                     <option value="DIGITALVOICE">DIGITALVOICE</option>
-                 </select>
-             </div>
-             <div id="ssb-submode" class="hidden" style="margin-top: 8px;">
-                 <label for="ssb-submode-select" style="font-size: 0.9rem;">Submodo SSB</label>
-                 <select id="ssb-submode-select">
-                     <option value="USB">USB</option>
-                     <option value="LSB">LSB</option>
-                 </select>
-             </div>
+              <div class="form-group">
+                  <label for="mode"><i class="fas fa-signal"></i> Modo</label>
+                  <select id="mode" required onchange="toggleSatelliteAndPropagationOptions();populateSubmodes('submode-select', this.value)">
+                      <option value="CW">CW</option>
+                      <option value="SSB">SSB</option>
+                      <option value="FM">FM</option>
+                      <option value="AM">AM</option>
+                      <option value="RTTY">RTTY</option>
+                      <option value="FT8">FT8</option>
+                      <option value="FT4">FT4</option>
+                      <option value="MFSK">MFSK</option>
+                      <option value="PSK">PSK</option>
+                      <option value="JS8">JS8</option>
+                      <option value="WSPR">WSPR</option>
+                      <option value="PKT">PKT</option>
+                      <option value="SSTV">SSTV</option>
+<option value="DATA">DATA</option>
+                      <option value="DIGITALVOICE">DIGITALVOICE</option>
+                      <option value="JT65">JT65</option>
+                      <option value="JT9">JT9</option>
+                      <option value="OLIVIA">OLIVIA</option>
+                      <option value="THOR">THOR</option>
+                      <option value="MT63">MT63</option>
+                      <option value="HELL">HELL</option>
+                      <option value="FAX">FAX</option>
+                      <option value="DOMINO">DOMINO</option>
+                  </select>
+              </div>
+              <div id="submode-container" class="hidden" style="margin-top: 8px;">
+                  <label for="submode-select" style="font-size: 0.9rem;">Submodo</label>
+                  <select id="submode-select"></select>
+              </div>
             <div id="satellite-options" class="hidden">
                 <div class="form-group">
                     <label for="satellite"><i class="fas fa-satellite"></i> Satélite</label>
                     <div style="display:flex;gap:8px;">
                         <select id="satellite" style="flex:1;" onchange="toggleOtherSatellite()">
-                            <option value="AO-91">AO-91</option>
-                            <option value="AO-92">AO-92</option>
-                            <option value="SO-50">SO-50</option>
-                            <option value="FO-118">FO-118 (Yamato)</option>
+                            <option value="AO-91">AO-91 (RadFxSat / Fox-1B)</option>
+                            <option value="AO-123">AO-123 (ASRTU-1)</option>
                             <option value="CAS-6">CAS-6 (XW-4)</option>
-                            <option value="LUSAT">LUSAT (LO-19)</option>
-                            <option value="PO-101">PO-101 (Diwata-2)</option>
                             <option value="ISS">ISS</option>
+                            <option value="PO-101">PO-101 (Diwata-2)</option>
+                            <option value="SO-50">SO-50 (SaudiSat)</option>
+                            <option value="TEVEL2">TEVEL2</option>
+                            <option value="AO-7">AO-7</option>
+                            <option value="FO-29">FO-29 (JAS-2)</option>
+                            <option value="RS-44">RS-44</option>
+                            <option value="QO-100">QO-100 (Es'hail-2)</option>
                             <option value="other">Otro...</option>
                         </select>
                         <input type="text" id="satellite-other" placeholder="Nombre" style="display:none;flex:1;">
@@ -191,7 +235,7 @@
             <div id="propagation-options" class="hidden">
                 <div class="form-group">
                     <label for="propagation-mode"><i class="fas fa-signal-stream"></i> Modo de Propagación</label>
-                     <select id="propagation-mode">
+                     <select id="propagation-mode" onchange="toggleSatelliteAndPropagationOptions()">
                          <option value="">Vacío</option>
                          <option value="SAT">SAT (Satélite)</option>
                          <option value="ES">ES (Sporadic E)</option>
@@ -223,9 +267,14 @@
     <!-- Open Logs Screen -->
     <div id="open-logs" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('menu')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('menu')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-folder-open"></i> Mis Logs</h1>
         </header>
         <div class="import-area">
@@ -256,9 +305,14 @@
     <!-- Log View Screen -->
     <div id="log-view" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('open-logs')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('open-logs')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1 id="log-title"><i class="fas fa-file-alt"></i> Log Detalles</h1>
             <button class="back-btn" onclick="openQsoMapForLog()" title="Ver mapa">
                 <i class="fas fa-map-marked-alt"></i>
@@ -281,9 +335,14 @@
     <!-- Edit QSO Screen -->
     <div id="edit-qso" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('log-view')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('log-view')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-edit"></i> Editar QSO</h1>
         </header>
         <form id="edit-qso-form" class="slide-up">
@@ -313,39 +372,57 @@
                 <label for="edit-qso-freq"><i class="fas fa-wave-square"></i> Frecuencia (MHz)</label>
                 <input type="text" id="edit-qso-freq" required autocomplete="off">
             </div>
-             <div class="form-group">
-                 <label for="edit-qso-mode"><i class="fas fa-signal"></i> Modo</label>
-                 <select id="edit-qso-mode" required onchange="toggleEditSatelliteAndPropagationOptions()">
-                     <option value="CW">CW</option>
-                     <option value="SSB">SSB</option>
-                     <option value="AM">AM</option>
-                     <option value="FM">FM</option>
-                     <option value="SSTV">SSTV</option>
-                     <option value="SAT">SAT</option>
-                     <option value="DIGITALVOICE">DIGITALVOICE</option>
-                 </select>
-             </div>
-             <div id="edit-ssb-submode" class="hidden" style="margin-top: 8px;">
-                 <label for="edit-ssb-submode-select" style="font-size: 0.9rem;">Submodo SSB</label>
-                 <select id="edit-ssb-submode-select">
-                     <option value="USB">USB</option>
-                     <option value="LSB">LSB</option>
-                 </select>
-             </div>
+              <div class="form-group">
+                  <label for="edit-qso-mode"><i class="fas fa-signal"></i> Modo</label>
+                  <select id="edit-qso-mode" required onchange="toggleEditSatelliteAndPropagationOptions();populateSubmodes('edit-submode-select', this.value)">
+                      <option value="CW">CW</option>
+                      <option value="SSB">SSB</option>
+                      <option value="FM">FM</option>
+                      <option value="AM">AM</option>
+                      <option value="RTTY">RTTY</option>
+                      <option value="FT8">FT8</option>
+                      <option value="FT4">FT4</option>
+                      <option value="MFSK">MFSK</option>
+                      <option value="PSK">PSK</option>
+                      <option value="JS8">JS8</option>
+                      <option value="WSPR">WSPR</option>
+                      <option value="PKT">PKT</option>
+                      <option value="SSTV">SSTV</option>
+                      <option value="DATA">DATA</option>
+                      <option value="DIGITALVOICE">DIGITALVOICE</option>
+                      <option value="SAT">SAT</option>
+                      <option value="JT65">JT65</option>
+                      <option value="JT9">JT9</option>
+                      <option value="OLIVIA">OLIVIA</option>
+                      <option value="THOR">THOR</option>
+                      <option value="MT63">MT63</option>
+                      <option value="HELL">HELL</option>
+                      <option value="FAX">FAX</option>
+                      <option value="DOMINO">DOMINO</option>
+                  </select>
+              </div>
+              <div id="edit-submode-container" class="hidden" style="margin-top: 8px;">
+                  <label for="edit-submode-select" style="font-size: 0.9rem;">Submodo</label>
+                  <select id="edit-submode-select"></select>
+              </div>
             <div id="edit-satellite-options" class="hidden">
                 <div class="form-group">
                     <label for="edit-qso-satellite"><i class="fas fa-satellite"></i> Satélite</label>
                     <div style="display:flex;gap:8px;">
                         <select id="edit-satellite" style="flex:1;" onchange="toggleEditOtherSatellite()">
-                            <option value="AO-91">AO-91</option>
-                            <option value="AO-92">AO-92</option>
-                            <option value="SO-50">SO-50</option>
-                            <option value="FO-118">FO-118 (Yamato)</option>
+                            <option value="AO-91">AO-91 (RadFxSat / Fox-1B)</option>
+                            <option value="AO-123">AO-123 (ASRTU-1)</option>
                             <option value="CAS-6">CAS-6 (XW-4)</option>
-                            <option value="LUSAT">LUSAT (LO-19)</option>
-                            <option value="PO-101">PO-101 (Diwata-2)</option>
                             <option value="ISS">ISS</option>
+                            <option value="PO-101">PO-101 (Diwata-2)</option>
+                            <option value="SO-50">SO-50 (SaudiSat)</option>
+                            <option value="TEVEL2">TEVEL2</option>
+                            <option value="AO-7">AO-7</option>
+                            <option value="FO-29">FO-29 (JAS-2)</option>
+                            <option value="RS-44">RS-44</option>
+                            <option value="QO-100">QO-100 (Es'hail-2)</option>
                             <option value="other">Otro...</option>
+                        </select>
                         </select>
                         <input type="text" id="edit-satellite-other" placeholder="Nombre" style="display:none;flex:1;">
                     </div>
@@ -354,7 +431,7 @@
             <div id="edit-propagation-options" class="hidden">
                 <div class="form-group">
                     <label for="edit-qso-prop"><i class="fas fa-signal-stream"></i> Modo de Propagación</label>
-                     <select id="edit-qso-prop">
+                     <select id="edit-qso-prop" onchange="toggleEditSatelliteAndPropagationOptions()">
                          <option value="">Vacío</option>
                          <option value="SAT">SAT (Satélite)</option>
                          <option value="ES">ES (Sporadic E)</option>
@@ -386,9 +463,14 @@
     <!-- Settings Screen -->
     <div id="settings" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('menu')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('menu')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-cog"></i> Configuración</h1>
         </header>
         <div id="settings-notification" class="notification"></div>
@@ -441,16 +523,37 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="default-frequency">Frecuencia por defecto (MHz)</label>
+                <input type="text" id="default-frequency" placeholder="ej. 14.070">
+            </div>
+            <div class="form-group">
                 <label for="default-mode">Modo por defecto</label>
-                 <select id="default-mode">
-                     <option value="CW">CW</option>
-                     <option value="SSB">SSB</option>
-                     <option value="AM">AM</option>
-                     <option value="FM">FM</option>
-                     <option value="SSTV">SSTV</option>
-                     <option value="SAT">SAT</option>
-                     <option value="DIGITALVOICE">DIGITALVOICE</option>
-                 </select>
+                  <select id="default-mode">
+                      <option value="CW">CW</option>
+                      <option value="SSB">SSB</option>
+                      <option value="FM">FM</option>
+                      <option value="AM">AM</option>
+                      <option value="RTTY">RTTY</option>
+                      <option value="FT8">FT8</option>
+                      <option value="FT4">FT4</option>
+                      <option value="MFSK">MFSK</option>
+                      <option value="PSK">PSK</option>
+                      <option value="JS8">JS8</option>
+                      <option value="WSPR">WSPR</option>
+                      <option value="PKT">PKT</option>
+                      <option value="SSTV">SSTV</option>
+                      <option value="DATA">DATA</option>
+                      <option value="DIGITALVOICE">DIGITALVOICE</option>
+                      <option value="SAT">SAT</option>
+                      <option value="JT65">JT65</option>
+                      <option value="JT9">JT9</option>
+                      <option value="OLIVIA">OLIVIA</option>
+                      <option value="THOR">THOR</option>
+                      <option value="MT63">MT63</option>
+                      <option value="HELL">HELL</option>
+                      <option value="FAX">FAX</option>
+                      <option value="DOMINO">DOMINO</option>
+                  </select>
             </div>
             <div class="form-group">
                 <label for="default-callsign">Indicativo por defecto</label>
@@ -485,9 +588,14 @@
     <!-- Export Logs Screen -->
     <div id="export-logs" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('open-logs')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('open-logs')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-download"></i> Exportar Logs</h1>
         </header>
         <div class="card slide-up">
@@ -510,9 +618,14 @@
     <!-- All Logs Screen -->
     <div id="all-logs" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('open-logs')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('open-logs')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-list"></i> Todos los QSOs</h1>
         </header>
         <div class="card filter-bar">
@@ -530,11 +643,27 @@
                     <option value="">Todos</option>
                     <option value="CW">CW</option>
                     <option value="SSB">SSB</option>
-                    <option value="AM">AM</option>
                     <option value="FM">FM</option>
+                    <option value="AM">AM</option>
+                    <option value="RTTY">RTTY</option>
+                    <option value="FT8">FT8</option>
+                    <option value="FT4">FT4</option>
+                    <option value="MFSK">MFSK</option>
+                    <option value="PSK">PSK</option>
+                    <option value="JS8">JS8</option>
+                    <option value="WSPR">WSPR</option>
+                    <option value="PKT">PKT</option>
                     <option value="SSTV">SSTV</option>
-                    <option value="SAT">SAT</option>
-                    <option value="DIGITALVOICE">DIGITALVOICE</option>
+                    <option value="DATA">DATA</option>
+<option value="DIGITALVOICE">DIGITALVOICE</option>
+                      <option value="JT65">JT65</option>
+                    <option value="JT9">JT9</option>
+                    <option value="OLIVIA">OLIVIA</option>
+                    <option value="THOR">THOR</option>
+                    <option value="MT63">MT63</option>
+                    <option value="HELL">HELL</option>
+                    <option value="FAX">FAX</option>
+                    <option value="DOMINO">DOMINO</option>
                 </select>
             </div>
             <button class="btn-primary" onclick="displayAllQSOs()" style="align-self: end;">
@@ -552,9 +681,14 @@
     <!-- Stats Screen -->
     <div id="stats" class="screen">
         <header>
-            <button class="back-btn" onclick="showScreen('menu')">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="header-left">
+                <button class="back-btn" onclick="showScreen('menu')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="hamburger-btn" onclick="toggleNavDrawer()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <h1><i class="fas fa-chart-bar"></i> Estadísticas</h1>
         </header>
         <div id="stats-content"></div>
@@ -582,11 +716,27 @@
                         <option value="">Todos</option>
                         <option value="CW">CW</option>
                         <option value="SSB">SSB</option>
-                        <option value="AM">AM</option>
                         <option value="FM">FM</option>
+                        <option value="AM">AM</option>
+                        <option value="RTTY">RTTY</option>
+                        <option value="FT8">FT8</option>
+                        <option value="FT4">FT4</option>
+                        <option value="MFSK">MFSK</option>
+                        <option value="PSK">PSK</option>
+                        <option value="JS8">JS8</option>
+                        <option value="WSPR">WSPR</option>
+                        <option value="PKT">PKT</option>
                         <option value="SSTV">SSTV</option>
-                        <option value="SAT">SAT</option>
-                        <option value="DIGITALVOICE">DIGITALVOICE</option>
+                        <option value="DATA">DATA</option>
+<option value="DIGITALVOICE">DIGITALVOICE</option>
+                      <option value="JT65">JT65</option>
+                        <option value="JT9">JT9</option>
+                        <option value="OLIVIA">OLIVIA</option>
+                        <option value="THOR">THOR</option>
+                        <option value="MT63">MT63</option>
+                        <option value="HELL">HELL</option>
+                        <option value="FAX">FAX</option>
+                        <option value="DOMINO">DOMINO</option>
                     </select>
                 </div>
             </div>
@@ -624,7 +774,46 @@
         </div>
     </div>
 
+    <!-- Navigation Drawer -->
+    <div id="nav-drawer" class="nav-drawer-overlay">
+        <div class="nav-drawer-panel">
+            <div class="nav-drawer-header">
+                <img src="icon.svg" alt="TinyLog">
+                <span>TinyLog</span>
+            </div>
+            <nav class="nav-drawer-links">
+                <button onclick="showScreen('menu'); closeNavDrawer();">
+                    <i class="fas fa-home"></i> Menú Principal
+                </button>
+                <button onclick="showScreen('init-log'); closeNavDrawer();">
+                    <i class="fas fa-file-plus"></i> Nuevo Log
+                </button>
+                <button onclick="showScreen('open-logs'); closeNavDrawer();">
+                    <i class="fas fa-folder-open"></i> Abrir Log
+                </button>
+                <button onclick="showScreen('stats'); closeNavDrawer();">
+                    <i class="fas fa-chart-bar"></i> Estadísticas
+                </button>
+                <button onclick="showScreen('settings'); closeNavDrawer();">
+                    <i class="fas fa-cog"></i> Configuración
+                </button>
+            </nav>
+            <div class="nav-drawer-footer">73 de XE2LDL • v0.1.7 PWA</div>
+        </div>
+    </div>
+
     <script type="module" src="js/main.js"></script>
+
+    <!-- Modal: Confirmar hora actual -->
+    <div id="datetime-confirm" class="modal-overlay hidden">
+        <div class="modal-card">
+            <p>¿Usar hora actual?</p>
+            <div class="btn-group">
+                <button id="dt-yes" class="btn-primary">Sí</button>
+                <button id="dt-no" class="btn-danger">No</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

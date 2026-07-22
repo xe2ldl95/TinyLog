@@ -1,5 +1,27 @@
 import { settings } from './settings.js';
 
+const submodeMap = {
+    'SSB': ['USB', 'LSB'],
+    'DIGITALVOICE': ['C4FM', 'DMR', 'DSTAR', 'FREEDV', 'M17'],
+    'MFSK': ['FT4', 'FT8', 'FST4', 'Q65'],
+    'PSK': ['PSK31', 'PSK63', 'PSK125']
+};
+
+export function populateSubmodes(selectId, mode) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const containerId = selectId === 'submode-select' ? 'submode-container' : 'edit-submode-container';
+    const container = document.getElementById(containerId);
+    const submodes = submodeMap[mode] || [];
+    if (submodes.length === 0) {
+        container.classList.add('hidden');
+        select.innerHTML = '';
+        return;
+    }
+    select.innerHTML = submodes.map(sm => `<option value="${sm}">${sm}</option>`).join('');
+    container.classList.remove('hidden');
+}
+
 export function showNotification(message, type = 'success', scope = 'main') {
     const targetId = scope === 'settings' ? 'settings-notification' : 'notification';
     const notification = document.getElementById(targetId);
@@ -17,12 +39,17 @@ function toggleSatelliteAndPropagationOptionsWithPrefix(prefix) {
     if (!modeEl) return;
     const mode = modeEl.value;
     const satId = prefix === 'edit-' ? 'edit-satellite-options' : 'satellite-options';
-    const ssbId = prefix === 'edit-' ? 'edit-ssb-submode' : 'ssb-submode';
+    const submodeSelectId = prefix === 'edit-' ? 'edit-submode-select' : 'submode-select';
     const propId = prefix === 'edit-' ? 'edit-propagation-options' : 'propagation-options';
 
-    document.getElementById(satId).classList.toggle('hidden', mode !== 'SAT');
-    document.getElementById(ssbId).classList.toggle('hidden', mode !== 'SSB');
-    document.getElementById(propId).classList.toggle('hidden', !settings.showPropagation);
+    const propSel = document.getElementById(prefix === 'edit-' ? 'edit-qso-prop' : 'propagation-mode');
+    const propMode = propSel ? propSel.value : '';
+
+    document.getElementById(satId).classList.toggle('hidden', propMode !== 'SAT');
+    populateSubmodes(submodeSelectId, mode);
+
+    const showProp = settings.showPropagation || ['FM', 'SSB', 'CW'].includes(mode);
+    document.getElementById(propId).classList.toggle('hidden', !showProp);
 }
 
 function toggleOtherSatelliteWithPrefix(prefix) {

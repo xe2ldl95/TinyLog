@@ -8,6 +8,7 @@ export function loadSettings() {
     const defaultRstSent = localStorage.getItem('defaultRstSent') || '599';
     const defaultRstRcvd = localStorage.getItem('defaultRstRcvd') || '599';
     const defaultMode = localStorage.getItem('defaultMode') || 'CW';
+    const defaultFrequency = localStorage.getItem('defaultFrequency') || '';
     const defaultCallsign = localStorage.getItem('defaultCallsign') || '';
     const defaultActivationType = localStorage.getItem('defaultActivationType') || 'General';
     const defaultLocator = localStorage.getItem('defaultLocator') || '';
@@ -22,6 +23,7 @@ export function loadSettings() {
     document.getElementById('default-rst-sent').value = defaultRstSent;
     document.getElementById('default-rst-rcvd').value = defaultRstRcvd;
     document.getElementById('default-mode').value = defaultMode;
+    document.getElementById('default-frequency').value = defaultFrequency;
     document.getElementById('default-callsign').value = defaultCallsign;
     document.getElementById('default-activation-type').value = defaultActivationType;
     document.getElementById('default-locator').value = defaultLocator;
@@ -59,6 +61,7 @@ export function saveSettings() {
     const defaultRstSent = document.getElementById('default-rst-sent').value;
     const defaultRstRcvd = document.getElementById('default-rst-rcvd').value;
     const defaultMode = document.getElementById('default-mode').value;
+    const defaultFrequency = document.getElementById('default-frequency').value;
     const defaultCallsign = document.getElementById('default-callsign').value.toUpperCase();
     const defaultActivationType = document.getElementById('default-activation-type').value;
     const defaultLocator = document.getElementById('default-locator').value.toUpperCase();
@@ -68,6 +71,7 @@ export function saveSettings() {
     localStorage.setItem('defaultRstSent', defaultRstSent);
     localStorage.setItem('defaultRstRcvd', defaultRstRcvd);
     localStorage.setItem('defaultMode', defaultMode);
+    localStorage.setItem('defaultFrequency', defaultFrequency);
     localStorage.setItem('defaultCallsign', defaultCallsign);
     localStorage.setItem('defaultActivationType', defaultActivationType);
     localStorage.setItem('defaultLocator', defaultLocator);

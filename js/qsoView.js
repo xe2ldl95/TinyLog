@@ -1,4 +1,4 @@
-import { showNotification, toggleSatelliteAndPropagationOptions, toggleEditSatelliteAndPropagationOptions } from './ui.js';
+import { showNotification, toggleSatelliteAndPropagationOptions, toggleEditSatelliteAndPropagationOptions, populateSubmodes } from './ui.js';
 import { getLogs, saveLogs, getCurrentLog, setCurrentLog, getAllQSOs, deleteLogById, updateLog, getEditingQsoIndex, setEditingQsoIndex } from './storage.js';
 import { generateADIF, generateADIFFromItems, parseADIF } from './adif.js';
 import { settings } from './settings.js';
@@ -165,20 +165,25 @@ export function openEditQsoById(id) {
 
     if (qso.mode === 'USB' || qso.mode === 'LSB') {
         document.getElementById('edit-qso-mode').value = 'SSB';
-        document.getElementById('edit-ssb-submode-select').value = qso.mode;
+        populateSubmodes('edit-submode-select', 'SSB');
+        document.getElementById('edit-submode-select').value = qso.mode;
     } else {
         document.getElementById('edit-qso-mode').value = qso.mode;
-        if (qso.mode === 'SSB' && qso.submode) {
-            document.getElementById('edit-ssb-submode-select').value = qso.submode;
+        populateSubmodes('edit-submode-select', qso.mode);
+        if (qso.submode) {
+            const subSel = document.getElementById('edit-submode-select');
+            if (subSel && subSel.options.length > 0) subSel.value = qso.submode;
         }
     }
 
     toggleEditSatelliteAndPropagationOptions();
 
-    if (qso.mode === 'SAT') {
-        const satSelect = document.getElementById('edit-satellite');
-        const satOther = document.getElementById('edit-satellite-other');
-        if (['AO-91','AO-92','SO-50','FO-118','CAS-6','LUSAT','PO-101','ISS'].includes(qso.satellite)) {
+    const propMode = qso.propagationMode;
+    const satSelect = document.getElementById('edit-satellite');
+    const satOther = document.getElementById('edit-satellite-other');
+    const knownSats = ['AO-91','AO-123','CAS-6','ISS','PO-101','SO-50','TEVEL2','AO-7','FO-29','RS-44','QO-100'];
+    if (propMode === 'SAT') {
+        if (knownSats.includes(qso.satellite)) {
             satSelect.value = qso.satellite;
             satOther.style.display = 'none';
         } else if (qso.satellite) {
@@ -188,7 +193,7 @@ export function openEditQsoById(id) {
         }
     }
 
-    if (settings.showPropagation && qso.propagationMode) {
+    if (qso.propagationMode) {
         document.getElementById('edit-qso-prop').value = qso.propagationMode;
     }
 
@@ -209,21 +214,26 @@ export function saveCurrentQso() {
     qso.frequency = document.getElementById('edit-qso-freq').value.trim();
     qso.mode = document.getElementById('edit-qso-mode').value;
 
-    if (qso.mode === 'SAT') {
-        const satSelect = document.getElementById('edit-satellite').value;
-        qso.satellite = satSelect === 'other' ? document.getElementById('edit-satellite-other').value.trim().toUpperCase() : satSelect.toUpperCase();
+    const satSelect = document.getElementById('edit-satellite');
+    const satContainer = document.getElementById('edit-satellite-options');
+    if (satSelect && satContainer && !satContainer.classList.contains('hidden')) {
+        qso.satellite = satSelect.value === 'other'
+            ? document.getElementById('edit-satellite-other').value.trim().toUpperCase()
+            : satSelect.value.toUpperCase();
     } else {
         delete qso.satellite;
     }
 
-    if (qso.mode === 'SSB') {
-        qso.submode = document.getElementById('edit-ssb-submode-select').value;
+    const editSubSel = document.getElementById('edit-submode-select');
+    if (editSubSel && !editSubSel.closest('.hidden') && editSubSel.options.length > 0) {
+        qso.submode = editSubSel.value;
     } else {
         delete qso.submode;
     }
 
-    if (settings.showPropagation) {
-        qso.propagationMode = document.getElementById('edit-qso-prop').value.toUpperCase();
+    const propSel = document.getElementById('edit-qso-prop');
+    if (propSel) {
+        qso.propagationMode = propSel.value.toUpperCase();
     } else {
         delete qso.propagationMode;
     }

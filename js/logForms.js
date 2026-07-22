@@ -1,5 +1,5 @@
 import { settings } from './settings.js';
-import { toggleSatelliteAndPropagationOptions, toggleLlotaReference } from './ui.js';
+import { toggleSatelliteAndPropagationOptions, toggleLlotaReference, populateSubmodes } from './ui.js';
 import { getCurrentLog } from './storage.js';
 
 export function loadInitDefaults() {
@@ -17,6 +17,7 @@ export function loadDefaultsForQSO() {
     const useLastFreq = settings.useLastFreq;
     const defaultRstSent = localStorage.getItem('defaultRstSent') || '599';
     const defaultRstRcvd = localStorage.getItem('defaultRstRcvd') || '599';
+    const defaultFrequency = localStorage.getItem('defaultFrequency') || '';
     let defaultMode = localStorage.getItem('defaultMode') || 'CW';
     let defaultSubmode = '';
 
@@ -27,37 +28,52 @@ export function loadDefaultsForQSO() {
 
     document.getElementById('rst-sent').value = defaultRstSent;
     document.getElementById('rst-rcvd').value = defaultRstRcvd;
+    document.getElementById('frequency').value = defaultFrequency;
 
-    if (useLastFreq) {
-        const log = getCurrentLog();
-        if (log && log.lastFreq) {
-            document.getElementById('frequency').value = log.lastFreq;
-        }
-        if (log && log.lastMode) {
+    const log = getCurrentLog();
+
+    if (useLastFreq && log) {
+        if (log.lastFreq) document.getElementById('frequency').value = log.lastFreq;
+        if (log.lastMode) {
             document.getElementById('mode').value = log.lastMode;
-            if (log.lastMode === 'SSB' && log.lastSubmode) {
-                document.getElementById('ssb-submode-select').value = log.lastSubmode;
+            populateSubmodes('submode-select', log.lastMode);
+            if (log.lastSubmode) {
+                const subSel = document.getElementById('submode-select');
+                if (subSel && subSel.options.length > 0) subSel.value = log.lastSubmode;
             }
         } else {
             document.getElementById('mode').value = defaultMode;
-            if (defaultMode === 'SSB') {
-                document.getElementById('ssb-submode-select').value = defaultSubmode || 'USB';
+            populateSubmodes('submode-select', defaultMode);
+            if (defaultMode === 'SSB' && defaultSubmode) {
+                const subSel = document.getElementById('submode-select');
+                if (subSel && subSel.options.length > 0) subSel.value = defaultSubmode;
             }
         }
-        if (log && settings && settings.showPropagation && log.lastPropagationMode) {
+        if (log.lastPropagationMode) {
             document.getElementById('propagation-mode').value = log.lastPropagationMode;
+        }
+        if (log.lastPropagationMode === 'SAT' && log.lastSatellite) {
+            document.getElementById('satellite').value = log.lastSatellite;
         }
     } else {
         document.getElementById('mode').value = defaultMode;
-        if (defaultMode === 'SSB') {
-            document.getElementById('ssb-submode-select').value = defaultSubmode || 'USB';
+        populateSubmodes('submode-select', defaultMode);
+        if (defaultMode === 'SSB' && defaultSubmode) {
+            const subSel = document.getElementById('submode-select');
+            if (subSel && subSel.options.length > 0) subSel.value = defaultSubmode;
+        }
+        if (log && log.lastPropagationMode) {
+            document.getElementById('propagation-mode').value = log.lastPropagationMode;
         }
     }
 
     toggleSatelliteAndPropagationOptions();
 
     document.getElementById('satellite-other').style.display = 'none';
-    document.getElementById('satellite').value = 'AO-91';
+    if (!document.getElementById('satellite').value) {
+        document.getElementById('satellite').value = 'AO-91';
+    }
+    document.getElementById('dx-call').focus();
 }
 
 export function setCurrentUTC() {
